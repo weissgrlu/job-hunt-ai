@@ -1,0 +1,10 @@
+POZICE: Tender & Transport Data Analyst
+FIRMA: Jobs.cz inzerent
+ODKAZ: https://www.jobs.cz/rpd/2001440614/?searchId=28530fc1-5dfd-4115-aa78-9700bb20fb00&rps=233
+FIT SKÓRE: 85%
+
+--------------------------------------------------
+TEXT MOTIVAČNÍHO DOPISU:
+--------------------------------------------------
+
+Vážený náborový týme společnosti FM Logistic, se zájmem jsem zaznamenal pozici Tender & Transport Data Analyst, která perfektně odpovídá mému profilu kombinujícímu rigorózní matematické vzdělání z MFF UK, silné analytické dovednosti v SQL, Pythonu a Excelu a zkušenosti s exekutivním řízením procesů. Vaše vize udržitelného a inovativního dodavatelského řetězce mě oslovuje, a proto bych rád své silné analytické myšlení uplatnil při navrhování efektivních kalkulačních modelů a cenotvorby v dopravní divizi. Během svých projektů – jako byla hloubková analýza zpoždění dopravy či behaviorální analýza milionových datových sad přes BigQuery a Tableau – jsem si osvojil schopnost rychle proniknout do logiky distribučních procesů a přetavit čísla v konkrétní manažerské podklady pro optimalizaci. Rád bych se s vámi setkal osobně a představil, jak mohu díky svému zázemí a orientaci na výsledek rychle posílit váš analytický tým.

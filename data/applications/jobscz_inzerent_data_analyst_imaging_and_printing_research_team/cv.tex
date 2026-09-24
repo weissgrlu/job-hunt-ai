@@ -1,0 +1,127 @@
+%-------------------------
+% Rover Resume - Optimized 1-Page Version
+%-------------------------
+
+\documentclass[10pt]{article}
+
+\usepackage[a4paper,hmargin=0.80in,top=0.55in,bottom=0.55in]{geometry}
+\usepackage{xcolor}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[sfdefault,semibold]{FiraSans}
+
+\definecolor{accent}{HTML}{141E61}
+
+\usepackage{fontawesome5}
+\usepackage[bookmarks=false,hidelinks]{hyperref}
+
+\newcommand{\linkicon}{%
+    {\color{gray}\footnotesize\raisebox{1pt}{\faIcon{external-link-alt}}}%
+}
+
+\setcounter{secnumdepth}{0}
+
+%====== LIST FORMATTING ======
+\usepackage{enumitem}
+\setlist[itemize]{nosep, left=0pt .. 1.2em, topsep=1pt, parsep=1pt}
+\setlist[description]{nosep, left=0pt, topsep=2pt, itemsep=2pt}
+
+%====== TITLE FORMATTING ======
+\usepackage{xhfill}
+\newcommand{\midrule}[1]{%
+    \leavevmode
+    \xrfill[.5ex]{1pt}[accent]~{\bfseries\color{accent} #1}~\xrfill[.5ex]{1pt}[accent]%
+}
+
+\usepackage{titlesec}
+\titlespacing{\section}{0pt}{4pt}{2pt}
+\titlespacing{\subsection}{0pt}{2pt}{0pt}
+\titlespacing{\subsubsection}{0pt}{1pt}{0pt}
+\titleformat{\section}{\normalsize\bfseries\uppercase}{}{}{\midrule}
+\titleformat*{\subsection}{\small\bfseries}
+
+%====== CUSTOM COMMANDS ======
+\newcommand{\aux}[1]{%
+    $|$ \space {\normalfont\itshape #1}%
+}
+
+\newcommand{\rside}[1]{%
+    \hfill {\normalfont\color{accent} #1}%
+}
+
+%====== DOCUMENT STARTS HERE ======
+
+\begin{document}
+    \pagestyle{empty}
+    
+    %====== BANNER ======
+    \begin{center}
+        {\fontsize{24}{26}\bfseries\color{accent} LUKÁŠ WEISSGRÁB} \\[2pt]
+        \small
+        \href{tel:775033549}{{\color{gray}{\faPhone}} 775 033 549} \quad
+        \href{mailto:weissgrlu@gmail.com}{{\color{gray}{\faEnvelope}} weissgrlu@gmail.com} \quad 
+        \href{https://github.com/weissgrlu}{{\color{gray}{\faGithub}} GitHub} \quad
+        \href{https://www.linkedin.com/in/luk%C3%A1%C5%A1-weissgr%C3%A1b-3ba51428a}{{\color{gray}{\faLinkedin}} LinkedIn}
+    \end{center}
+    \vspace{-4pt}
+    \begin{center}
+        \footnotesize \textit{Absolvent Matematicko-fyzikální fakulty UK s červeným diplomem a silným základem v kvantitativní analýze, statistice a SQL/Pythonu. Spojuji exaktní přístup k modelování dat s praxí v exekutivním řízení a tvorbě dashboardů v Tableau a Power BI. Hledám pozici datového analytika, kde mohu efektivně přetvářet komplexní tržní data v jasné manažerské podklady.}
+    \end{center}
+    \vspace{-2pt}
+    
+    %====== DOVEDNOSTI ======
+    \section{Dovednosti}
+    \begin{description}[font=\bfseries]
+        \item[Technický stack:] SQL (Google BigQuery, PostgreSQL), Python (Pandas, NumPy, Scikit-learn), Tableau Public, Git, GitHub, Jupyter Notebooks, Excel
+        \item[Analytické metody:] Exploratorní datová analýza (EDA), regrese, segmentace zákazníků, časové řady, statistické modelování, data storytelling
+        \item[Jazyky a domény:] Angličtina (B2), Letecké operace a meteorologie (PPL(A), student teorie ATPL)
+    \end{description}
+    
+    %====== PROJEKTY ======
+    \section{Projekty}
+    \subsection{The Hidden Cost of Weather: Audit indukovaných zpoždění letecké dopravy \aux{\href{https://github.com/weissgrlu/airline-delay-metar-analysis}{Link \linkicon}}}
+    \begin{itemize}
+        \item \textbf{Stack:} Python (Pandas, Regex parsing METAR), Time-Series Tail Number Tracking, Tableau Public, Jupyter Notebook
+        \item Analýza US letových dat a METAR počasí: kvantifikace kaskádových zpoždění a provozních vlivů na rotace letadel.
+        \item \textit{Projekt auditu zpoždění letecké dopravy (Python, Pandas, Regex METAR a Tableau) demonstruje moji schopnost zpracovávat nestrukturovaná data, provádět pokročilou explorační analýzu a vizualizovat klíčové metriky do interaktivních dashboardů pro strategické rozhodování.}
+    \end{itemize}
+    
+    \subsection{Cyclistic Bike-Share: Behaviorální analýza a marketingová konverze \aux{\href{https://github.com/weissgrlu/google-data-analytics-cyclistics}{Link \linkicon}}}
+    \begin{itemize}
+        \item \textbf{Stack:} Google BigQuery (SQL), Feature Engineering, Exploratory Data Analysis (EDA), Tableau Public, GitHub
+        \item Kohortová segmentace a analýza více než 5 milionů jízd pro optimalizaci konverzních strategií předplatného.
+    \end{itemize}
+    
+    %====== PRAXE ======
+    \section{Relevantní praxe}
+    \subsection{Gymnázium Čelákovice \rside{Čelákovice}}
+    \subsubsection{Zástupce ředitele \aux{Operations \& Data Management} \rside{2024 -- 2025}}
+    \begin{itemize}
+        \item Správa a analýza provozních a studijních metrik pro strategická rozhodnutí vedení; optimalizace kapacitního plánování a rozvrhových matic (tvorba rozvrhů a celkového chodu školy).
+        \item Exekutivní řízení procesů organizace, koordinace týmů a reporting klíčových provozních ukazatelů zřizovateli.
+    \end{itemize}
+    
+    \subsection{Gymnázium Jana Keplera \& Gymnázium Čelákovice \rside{Praha / Čelákovice}}
+    \subsubsection{Učitel matematiky a fyziky \aux{Data Storytelling \& Analytické modelování} \rside{2019 -- 2026}}
+    \begin{itemize}
+        \item Návrh kvantitativních modelů a převod abstraktních matematicko-statistických struktur do srozumitelných prezentací (\textit{Data Storytelling}).
+        \item Zpracování interních hodnoticích dat, tvorba analytických přehledů pro sledování studijních trajektorií a příprava na soutěže v exaktním řešení problémů.
+    \end{itemize}
+    
+    %====== VZDĚLÁNÍ & CERTIFIKACE ======
+    \section{Vzdělání a certifikace}
+    \subsection{Matematicko-fyzikální fakulta UK (MFF UK), Praha \rside{2017 -- 2022}}
+    \begin{itemize}
+        \item \textbf{Mgr. s vyznamenáním (červený diplom)} $|$ Rigorózní základ v matematické analýze, lineární algebře, pravděpodobnosti a statistice.
+        \item \textbf{Diplomová práce:} \textit{Kvantitativní a kvalitativní výzkum} -- hloubková analýza empirických dat, testování statistických hypotéz.
+    \end{itemize}
+    
+    \vspace{2pt}
+    \noindent
+    \textbf{Certifikace:} 
+    Google Data Analytics Professional Certificate (2026) $|$ 
+    Google AI Essentials (2026) $|$ 
+    Lídr školy -- management a soft-skills (2025)
+    
+\end{document}

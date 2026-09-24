@@ -1,0 +1,14 @@
+POZICE: Data Analyst - Imaging and Printing Research team
+FIRMA: Jobs.cz inzerent
+ODKAZ: https://www.jobs.cz/rpd/2001396645/
+FIT SKÓRE: 85%
+
+--------------------------------------------------
+TEXT MOTIVAČNÍHO DOPISU:
+--------------------------------------------------
+
+Vážený náborový týme společnosti IDC, s velkým zájmem jsem zaznamenal pozici Data Analyst v týmu Imaging and Printing Research. Jako absolvent matematické analýzy a statistiky na MFF UK s červeným diplomem disponuji silným teoretickým i praktickým základem pro práci s rozsáhlými datovými sadami. Moje technická výbava zahrnuje pokročilou práci s SQL v Google BigQuery, analýzu a modelování v Pythonu (Pandas, NumPy) a vizualizaci dat pomocí nástrojů Tableau a Power BI, což mi umožňuje efektivně zpracovávat primární i sekundární data trhu.
+
+Během svých projektů – jako byla behaviorální analýza rozsáhlé datasetu pro Cyclistic nebo detailní audit vlivu počasí na leteckou dopravu – jsem si osvojil schopnost identifikovat skryté tržní trendy, ověřovat statistické hypotézy a prezentovat zjištění formou srozumitelného data storytellingu. Vedle silných analytických dovedností přináším také zkušenosti s exekutivním řízením procesů, operativním reportingem a budováním vztahů, což přímo odpovídá potřebám spolupráce s klíčovými partnery a dodavateli v regionu EMEA.
+
+Rád bych se stal posilou vašeho týmu, přispěl k přesné a včasné tvorbě tržních analýz a pomohl klientům IDC činit informovaná strategická rozhodnutí. Budu se těšit na příležitost setkat se s vámi osobně a detailněji probudit můj potenciál a přínos pro vaši společnost.
