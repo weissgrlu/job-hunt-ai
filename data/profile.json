@@ -1,0 +1,58 @@
+{
+  "name": "Lukáš Weissgráb",
+  "target_roles": [
+    "Junior Data Analyst",
+    "Data Analyst",
+    "BI Analyst",
+    "Operations / Data Specialist"
+  ],
+  "technical_skills": {
+    "languages_and_tools": [
+      "SQL",
+      "Google BigQuery",
+      "Python (Pandas, NumPy)",
+      "Tableau Desktop / Public",
+      "Power BI",
+      "Jupyter Notebooks",
+      "Git",
+      "GitHub",
+      "Excel",
+      "Google Sheets"
+    ],
+    "methods": [
+      "Exploratory Data Analysis (EDA)",
+      "Feature Engineering",
+      "Regex parsing",
+      "Časové řady (Time-series analysis)",
+      "Testování statistických hypotéz",
+      "Kvantitativní a statistické modelování"
+    ]
+  },
+  "education": {
+    "degree": "Mgr. s vyznamenáním (červený diplom)",
+    "institution": "Matematicko-fyzikální fakulta Univerzity Karlovy (MFF UK)",
+    "field": "Matematicko-analytický a statistický základ (matematická analýza, lineární algebra, pravděpodobnost a statistika)"
+  },
+  "certifications": [
+    "Google Data Analytics Professional Certificate (2026)",
+    "Google AI Essentials (2026)",
+    "Lídr školy – management a soft-skills (2025)"
+  ],
+  "portfolio_highlights": [
+    "The Hidden Cost of Weather: Audit indukovaných zpoždění letecké dopravy (Python, Pandas, Regex METAR, časové řady, Tableau storyboard)",
+    "Cyclistic Bike-Share: Behaviorální analýza a marketingová konverze (Google BigQuery SQL, EDA, 5,9M řádků, Tableau dashboardy)"
+  ],
+  "soft_skills_and_management": [
+    "Data Storytelling – převod komplexních dat do srozumitelných manažerských podkladů",
+    "Exekutivní řízení procesů a operativní reporting (bývalý zástupce ředitele)",
+    "Prezentační a pedagogické schopnosti, vedení lidí"
+  ],
+  "languages": {
+    "czech": "Rodilý mluvčí",
+    "english": "B2"
+  },
+  "preferences": {
+    "location": ["Praha", "Středočeský kraj", "Hybrid", "Remote"],
+    "seniority": ["Junior", "Junior/Medior", "Medior"]
+  }
+}
