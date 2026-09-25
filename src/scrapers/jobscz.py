@@ -1,238 +1,203 @@
-import hashlib
-import random
-import re
+import logging
 import sqlite3
 import time
-import unicodedata
-from pathlib import Path
-from urllib.parse import urljoin
-import requests
+import re
+from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-DB_PATH = ROOT_DIR / "data" / "jobs.db"
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "cs,en-US;q=0.9,en;q=0.8",
-}
+DB_PATH = "data/jobs.db"
 
-# Hledané pozice na Jobs.cz
-SEARCH_QUERIES = [
+# Hledané výrazy pro datové a BI role
+SEARCH_TERMS = [
+    "datový analytik",
     "data analyst",
-    "business analyst",
-    "bi analyst"
+    "BI analytik",
+    "business intelligence",
+    "reporting analyst",
+    "SQL analytik",
+    "junior data"
 ]
 
+QUERY_STRING = "&".join(f"q%5B%5D={quote_plus(term)}" for term in SEARCH_TERMS)
+BASE_SEARCH_URL = f"https://www.jobs.cz/prace/praha/?{QUERY_STRING}"
 
-def init_db():
-    """Zajistí existenci tabulky jobs."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            company TEXT,
-            location TEXT,
-            url TEXT UNIQUE,
-            description TEXT,
-            fit_score INTEGER,
-            status TEXT DEFAULT 'NEW',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+def init_db(db_path: str = DB_PATH) -> None:
+    """Vytvoří tabulku v SQLite, pokud ještě neexistuje."""
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS jobs (
+                url TEXT PRIMARY KEY,
+                title TEXT,
+                company TEXT,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+
+
+def save_job(url: str, title: str, company: str, description: str, db_path: str = DB_PATH) -> None:
+    """Uloží nebo aktualizuje záznam inzerátu v SQLite databázi."""
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            INSERT INTO jobs (url, title, company, description)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(url) DO UPDATE SET
+                title = excluded.title,
+                company = CASE 
+                    WHEN excluded.company != 'Neznámá společnost' THEN excluded.company 
+                    ELSE jobs.company 
+                END,
+                description = excluded.description
+        """, (url, title, company, description))
+        conn.commit()
+
+
+def extract_job_links(page_html: str) -> list[dict]:
+    """Z HTML stránky výsledků vyhledávání vytáhne odkazy, názvy a firmy."""
+    soup = BeautifulSoup(page_html, "html.parser")
+    jobs = []
+
+    for article in soup.select("article.SearchResultCard, div[data-job-id]"):
+        link_tag = article.select_one("a.SearchResultCard__titleLink, a[href*='/rpd/'], a[href*='detail-pozice']")
+        if not link_tag:
+            continue
+
+        href = link_tag.get("href", "")
+        if not href.startswith("http"):
+            href = f"https://www.jobs.cz{href}"
+
+        title = link_tag.get_text(strip=True)
+
+        # Robustní hledání názvu firmy přes více možných selektorů na Jobs.cz
+        company = "Neznámá společnost"
+        company_tag = article.select_one(
+            ".SearchResultCard__author, "
+            ".SearchResultCard__footerMeta span, "
+            "[data-qa='company-name'], "
+            "[data-qa='search-result-company'], "
+            "a[href*='/spolecnost/'], "
+            ".SearchResultCard__companyName"
         )
-    """)
-    conn.commit()
-    conn.close()
+
+        if company_tag:
+            cand = company_tag.get_text(strip=True)
+            if cand and not any(skip in cand.lower() for skip in ["před", "dny", "hodin", "kč", "praha"]):
+                company = cand
+
+        clean_url = href if "detail-pozice" in href else href.split("?")[0]
+
+        jobs.append({
+            "url": clean_url,
+            "title": title,
+            "company": company
+        })
+
+    return jobs
 
 
-def normalize_string(text: str) -> str:
-    """Normalizuje text pro porovnání duplicit (odstraní diakritiku, převede na malá písmena)."""
-    if not text:
+def parse_company_from_title(page_title: str) -> str:
+    """Zkusí vytáhnout firmu z titulku stránky (např. 'Datový analytik – ABC s.r.o. | Jobs.cz')."""
+    if not page_title:
         return ""
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join(c for c in text if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", text).strip().lower()
+    # Ořízneme suffix '| Jobs.cz' nebo '- Jobs.cz'
+    clean_t = re.sub(r"\s*[\|\-–—]\s*Jobs\.cz.*$", "", page_title, flags=re.IGNORECASE).strip()
+    # Rozdělíme podle pomlčky
+    parts = re.split(r"\s+[–—\-]\s+", clean_t)
+    if len(parts) >= 2:
+        return parts[-1].strip()
+    return ""
 
 
-def scrape_jobs(max_pages_per_query: int = 3):
-    """Prohledá Jobs.cz pro zadané dotazy a nové inzeráty uloží do DB."""
+def run_scraper(search_url: str = BASE_SEARCH_URL, max_pages: int = 3) -> None:
     init_db()
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
 
-    total_added = 0
-    print(f"Spouštím scraping vyhledávání na Jobs.cz pro dotazy: {', '.join(SEARCH_QUERIES)}...")
+    with sqlite3.connect(DB_PATH) as conn:
+        existing_urls = set(
+            row[0] for row in conn.execute(
+                "SELECT url FROM jobs WHERE description IS NOT NULL AND LENGTH(description) > 200"
+            ).fetchall()
+        )
 
-    for query in SEARCH_QUERIES:
-        for page in range(1, max_pages_per_query + 1):
-            url = f"https://www.jobs.cz/prace/?q={requests.utils.quote(query)}&page={page}"
+    with sync_playwright() as p:
+        logger.info("Spouštím headless Chromium...")
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            locale="cs-CZ"
+        )
+        page = context.new_page()
+
+        collected_jobs = []
+
+        # 1. Procházení stránek vyhledávání
+        for page_num in range(1, max_pages + 1):
+            url = f"{search_url}&page={page_num}" if page_num > 1 else search_url
+            logger.info(f"Procházím stránku vyhledávání {page_num}: {url}")
+
             try:
-                time.sleep(random.uniform(1.0, 2.0))
-                res = requests.get(url, headers=HEADERS, timeout=15)
-                if res.status_code != 200:
+                page.goto(url, wait_until="domcontentloaded", timeout=20000)
+                jobs_on_page = extract_job_links(page.content())
+                logger.info(f"Nalezeno {len(jobs_on_page)} inzerátů na stránce {page_num}.")
+
+                if not jobs_on_page:
                     break
 
-                soup = BeautifulSoup(res.content, "html.parser")
-                articles = soup.find_all("article")
-                if not articles:
-                    # Alternativní selektory pro výpis inzerátů
-                    articles = soup.select(".SearchResultCard, [data-job-id]")
-
-                if not articles:
-                    break
-
-                added_in_page = 0
-                for art in articles:
-                    link_tag = art.find("a", href=re.compile(r"/rpd/|/fp/|/pd/"))
-                    if not link_tag:
-                        continue
-
-                    job_url = urljoin("https://www.jobs.cz", link_tag.get("href", "").split("?")[0])
-                    title = link_tag.get_text(strip=True)
-                    if not title or not job_url:
-                        continue
-
-                    # Získání firmy a lokality, pokud jsou dostupné
-                    company = "Neuvedeno"
-                    comp_elem = art.find(class_=re.compile(r"company|f-bold", re.I))
-                    if comp_elem:
-                        company = comp_elem.get_text(strip=True)
-
-                    location = "Česká republika"
-                    loc_elem = art.find(class_=re.compile(r"locality|location|f-italic", re.I))
-                    if loc_elem:
-                        location = loc_elem.get_text(strip=True)
-
-                    try:
-                        cursor.execute("""
-                            INSERT INTO jobs (title, company, location, url, status)
-                            VALUES (?, ?, ?, ?, 'NEW')
-                        """, (title, company, location, job_url))
-                        conn.commit()
-                        added_in_page += 1
-                        total_added += 1
-                    except sqlite3.IntegrityError:
-                        # Inzerát už v DB existuje podle URL
-                        continue
-
-                print(f" -> Dotaz '{query}' (strana {page}): nalezeno {len(articles)} inzerátů, nových přidáno: {added_in_page}")
-
+                collected_jobs.extend(jobs_on_page)
             except Exception as e:
-                print(f"Chyba při stahování {url}: {e}")
+                logger.error(f"Chyba při čtení stránky {page_num}: {e}")
                 break
 
-    conn.close()
-    print(f"Scraping dokončen. Celkem nově přidáno do DB: {total_added} inzerátů.")
+        unique_jobs = list({job["url"]: job for job in collected_jobs}.values())
+        new_jobs = [job for job in unique_jobs if job["url"] not in existing_urls]
+        logger.info(f"Nalezeno {len(unique_jobs)} inzerátů celkem. Z toho nových ke stažení: {len(new_jobs)}")
+
+        # 2. Stažení detailu pouze pro nové pozice
+        for idx, job in enumerate(new_jobs, start=1):
+            job_url = job["url"]
+            company_name = job["company"]
+
+            try:
+                page.goto(job_url, wait_until="networkidle", timeout=20000)
+                raw_text = page.inner_text("body")
+
+                # Fallback pro firmu z titulku otevřené stránky
+                if company_name == "Neznámá společnost":
+                    page_title = page.title()
+                    extracted_comp = parse_company_from_title(page_title)
+                    if extracted_comp:
+                        company_name = extracted_comp
+
+                logger.info(f"[{idx}/{len(new_jobs)}] Stahuji detail: {job['title']} | {company_name}")
+
+                lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+                clean_description = "\n".join(lines)
+
+                save_job(
+                    url=job_url,
+                    title=job["title"],
+                    company=company_name,
+                    description=clean_description
+                )
+            except Exception as e:
+                logger.warning(f"Chyba při stahování detailu {job_url}: {e}")
+
+            time.sleep(0.5)
+
+        browser.close()
+        logger.info("Scraping fáze dokončena.")
 
 
-def fetch_job_detail(url: str) -> str:
-    """Stáhne detail inzerátu s podporou redirectů a různých HTML struktur."""
-    try:
-        time.sleep(random.uniform(0.6, 1.2))
-        session = requests.Session()
-        res = session.get(url, headers=HEADERS, timeout=15, allow_redirects=True)
-        if res.status_code != 200:
-            return ""
+scrape_jobs = run_scraper
 
-        soup = BeautifulSoup(res.content, "html.parser")
-
-        # Odstranění technického a navigačního balastu
-        for junk in soup(["script", "style", "nav", "footer", "header", "noscript"]):
-            junk.extract()
-
-        candidates = [
-            soup.find("div", class_=re.compile(r"job-ad-body|standalone-content|cp-body|typography", re.I)),
-            soup.find("section", class_=re.compile(r"job-ad|content", re.I)),
-            soup.find("main"),
-            soup.body,
-        ]
-
-        main_elem = next((c for c in candidates if c is not None), soup)
-
-        text_elements = main_elem.find_all(["p", "li", "h1", "h2", "h3", "h4", "div"])
-        full_text = " ".join([elem.get_text(separator=" ", strip=True) for elem in text_elements])
-        cleaned = re.sub(r"\s+", " ", full_text).strip()
-
-        return cleaned[:5000] if len(cleaned) > 80 else ""
-    except Exception:
-        return ""
-
-
-def clean_database_duplicates():
-    """Odstraní duplicity a systémové/GDPR odkazy přímo z databáze."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # 1. Odstranění GDPR a technických odkazů
-    cursor.execute("""
-        DELETE FROM jobs 
-        WHERE lower(url) LIKE '%gdpr%' 
-           OR lower(title) LIKE '%gdpr%'
-           OR lower(url) LIKE '%cookies%'
-           OR lower(url) LIKE '%terms%'
-    """)
-
-    # 2. Odstranění duplicit podle normalizované firmy a pozice
-    cursor.execute("""
-        DELETE FROM jobs 
-        WHERE id NOT IN (
-            SELECT id FROM (
-                SELECT id, 
-                       ROW_NUMBER() OVER (
-                           PARTITION BY lower(trim(company)), lower(trim(title)) 
-                           ORDER BY fit_score DESC, length(ifnull(description, '')) DESC, id DESC
-                       ) as rn 
-                FROM jobs
-            ) WHERE rn = 1
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
-def enrich_missing_details(limit: int = 200):
-    clean_database_duplicates()
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT id, title, url 
-        FROM jobs 
-        WHERE (description IS NULL OR length(description) <= 100)
-          AND lower(url) NOT LIKE '%gdpr%'
-          AND lower(title) NOT LIKE '%gdpr%'
-        LIMIT ?
-    """, (limit,))
-
-    jobs_without_detail = cursor.fetchall()
-
-    if not jobs_without_detail:
-        print("Všechny inzeráty v databázi již mají plný detail.")
-        conn.close()
-        return
-
-    print(f"Dotahuji detaily pro {len(jobs_without_detail)} inzerátů (včetně EN / redirectů)...")
-
-    for idx, (job_id, title, url) in enumerate(jobs_without_detail, start=1):
-        print(f"[{idx}/{len(jobs_without_detail)}] Stahuji: {title[:50]}...")
-        detail_text = fetch_job_detail(url)
-
-        if detail_text:
-            cursor.execute("UPDATE jobs SET description = ? WHERE id = ?", (detail_text, job_id))
-            conn.commit()
-        else:
-            print(f" -> Detail se nepodařilo načíst: {title[:40]}")
-
-    conn.close()
-    print("\nDotahování detailů dokončeno.")
+def enrich_missing_details(*args, **kwargs) -> None:
+    pass
 
 
 if __name__ == "__main__":
-    scrape_jobs()
-    enrich_missing_details()
+    run_scraper()

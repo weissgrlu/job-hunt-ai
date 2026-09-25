@@ -1,6 +1,7 @@
 import os
 import re
 import sqlite3
+import time
 import unicodedata
 from pathlib import Path
 from dotenv import load_dotenv
@@ -26,8 +27,14 @@ class TailoredContent(BaseModel):
     cv_summary: str = Field(
         description="Profesní shrnutí (2-3 věty) do záhlaví CV, psané česky, zdůrazňující analytické schopnosti a přesah kandidáta relevantní pro tuto pozici."
     )
-    selected_project_bullet: str = Field(
-        description="Jedna konkrétní věta/odrážka vyzdvihující kandidátův projekt (např. analýza zpoždění letů nebo Cyclistic) a jeho relevanci k této roli."
+    jobhunt_project_bullet: str = Field(
+        description="Jedna konkrétní věta v češtině doplňující projekt JobHunt AI. Vyzdvihni automatizaci datové pipeline, integraci LLM API, scraping nebo architekturu zpracování dat s vazbou na danou roli."
+    )
+    flight_project_bullet: str = Field(
+        description="Jedna konkrétní věta v češtině doplňující letecký projekt (The Hidden Cost of Weather). Vyzdvihni práci s Pythonem, parsování dat, časové řady nebo vizualizace v Tableau s vazbou na danou roli."
+    )
+    cyclistic_project_bullet: str = Field(
+        description="Jedna konkrétní věta v češtině doplňující projekt Cyclistic Bike-Share. Vyzdvihni pokročilé SQL v BigQuery nad velkým objemem dat, EDA, kohorty nebo byznys segmentaci s vazbou na danou roli."
     )
     cover_letter_body: str = Field(
         description="Strukturovaný text motivačního dopisu (3 odstavce: úvod a motivace, konkrétní přínos a projekty/stack, závěr a výzva k setkání)."
@@ -78,8 +85,10 @@ POPIS POZICE:
 
 ÚKOL:
 1. `cv_summary`: Napiš úderné shrnutí profilu (2-3 věty v češtině). Vyzdvihni exaktní analytické myšlení (MFF UK), pokročilé SQL/Python/BI a schopnost interpretovat data pro byznys.
-2. `selected_project_bullet`: Vyber nejrelevantnější aspekt z portfolia a zformuluj jednu větu, jak tento projekt demonstruje schopnosti nutné pro tuto roli.
-3. `cover_letter_body`: Napiš profesionální, věcný a sebevědomý motivační dopis (cca 3 odstavce v češtině). Žádné prázdné fráze. Zaměř se na okamžitou přidanou hodnotu.
+2. `jobhunt_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na projekt JobHunt AI. Zdůrazni robustní end-to-end automatizaci procesů, orchestraci databáze (SQLite) a propojení AI s reálnou aplikací s ohledem na požadavky v inzerátu.
+3. `flight_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na letecký projekt (audit zpoždění letů, METAR počasí). Zdůrazni práci v Pythonu, čištění nestrukturovaných dat, časové řady nebo reporting relevantní pro tuto pozici.
+4. `cyclistic_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na projekt Cyclistic Bike-Share. Zdůrazni práci v Google BigQuery (SQL) nad 5,9M řádky a segmentaci pro byznys rozhodování relevantní pro tuto pozici.
+5. `cover_letter_body`: Napiš profesionální, věcný a sebevědomý motivační dopis (cca 3 odstavce v češtině). Žádné prázdné fráze. Zaměř se na okamžitou přidanou hodnotu.
 """
 
     response = client.models.generate_content(
@@ -95,10 +104,6 @@ POPIS POZICE:
 
 
 def process_applications(min_score: int = 70) -> list[dict]:
-    """
-    Vybere inzeráty s fit_score >= min_score a stavem 'EVALUATED',
-    vygeneruje pro ně CV i dopis a VRÁTÍ seznam vytvořených pozic pro notifikaci.
-    """
     profile_str = load_file(PROFILE_PATH)
     cv_template = load_file(CV_TEMPLATE_PATH)
 
@@ -106,14 +111,12 @@ def process_applications(min_score: int = 70) -> list[dict]:
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, title, company, url, description, fit_score 
+        SELECT rowid AS id, title, company, url, description, fit_score 
         FROM jobs 
         WHERE status = 'EVALUATED' AND fit_score >= ?
     """, (min_score,))
 
     jobs_to_process = cursor.fetchall()
-
-    # Zde si budeme ukládat pozice, které úspěšně vytvoříme
     newly_generated_jobs = []
 
     if not jobs_to_process:
@@ -124,19 +127,38 @@ def process_applications(min_score: int = 70) -> list[dict]:
     print(f"Generuji materiály pro {len(jobs_to_process)} pozic...")
     APPLICATIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-    for job_id, title, company, url, desc, score in jobs_to_process:
+    for idx, (job_id, title, company, url, desc, score) in enumerate(jobs_to_process, start=1):
+        print(f"\n[{idx}/{len(jobs_to_process)}] Generuji materiály pro: {company} - {title} (Skóre: {score}%)...")
+
+        tailored = None
+        attempts = 0
+        while attempts < 3:
+            try:
+                tailored = generate_tailored_texts(profile_str, title, desc)
+                break
+            except Exception as e:
+                attempts += 1
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    print(f" -> RPM limit dosažen. Čekám 38 sekund (pokus {attempts}/3)...")
+                    time.sleep(38)
+                else:
+                    print(f" -> Chyba při volání API: {e}")
+                    break
+
+        if not tailored:
+            print(f" -> Přeskakuji {title}, nepodařilo se vygenerovat podklady.")
+            continue
+
         folder_name = sanitize_folder_name(f"{company}_{title}")
         job_dir = APPLICATIONS_DIR / folder_name
         job_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"\nGeneruji materiály pro: {company} - {title} (Skóre: {score}%)...")
-
         try:
-            tailored = generate_tailored_texts(profile_str, title, desc)
-
-            # 1. Vyplnění a uložení CV do LaTeXu
+            # 1. Vyplnění a uložení CV do LaTeXu se všemi třemi projekty
             cv_filled = cv_template.replace("{{SUMMARY}}", escape_latex(tailored.cv_summary))
-            cv_filled = cv_filled.replace("{{PROJECT_HIGHLIGHT}}", escape_latex(tailored.selected_project_bullet))
+            cv_filled = cv_filled.replace("{{JOBHUNT_HIGHLIGHT}}", escape_latex(tailored.jobhunt_project_bullet))
+            cv_filled = cv_filled.replace("{{FLIGHT_HIGHLIGHT}}", escape_latex(tailored.flight_project_bullet))
+            cv_filled = cv_filled.replace("{{CYCLISTIC_HIGHLIGHT}}", escape_latex(tailored.cyclistic_project_bullet))
 
             cv_path = job_dir / "cv.tex"
             with open(cv_path, "w", encoding="utf-8") as f:
@@ -157,13 +179,12 @@ def process_applications(min_score: int = 70) -> list[dict]:
             with open(letter_path, "w", encoding="utf-8") as f:
                 f.write(letter_content)
 
-            # 3. Změna statusu v databázi
-            cursor.execute("UPDATE jobs SET status = 'GENERATED' WHERE id = ?", (job_id,))
+            # 3. Změna statusu v databázi přes rowid
+            cursor.execute("UPDATE jobs SET status = 'GENERATED' WHERE rowid = ?", (job_id,))
             conn.commit()
 
-            print(f" -> Soubory vytvořeny v: {job_dir.relative_to(ROOT_DIR)}")
+            print(f" -> Hotovo: {job_dir.relative_to(ROOT_DIR)}")
 
-            # 4. Přidáme pozici do seznamu pro e-mailovou notifikaci
             newly_generated_jobs.append({
                 "title": title,
                 "company": company,
@@ -173,12 +194,13 @@ def process_applications(min_score: int = 70) -> list[dict]:
             })
 
         except Exception as e:
-            print(f" -> Chyba při generování pro {title}: {e}")
+            print(f" -> Chyba při zápisu souborů pro {title}: {e}")
+
+        # Bezpečná prodleva mezi voláními pro dodržení limitu 15 RPM
+        time.sleep(4.5)
 
     conn.close()
-    print(f"\nGenerování dokončeno! Připraveno {len(newly_generated_jobs)} složek.")
-    
-    # Vracíme seznam pozic pro main.py
+    print(f"\nGenerování dokončeno! Úspěšně vytvořeno {len(newly_generated_jobs)} složek.")
     return newly_generated_jobs
 
 

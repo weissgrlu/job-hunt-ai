@@ -1,10 +1,8 @@
+.env
 venv/
 __pycache__/
-*.py[cod]
-.env
-*.db
-*.sqlite3
-output/
-*.aux
+*.pyc
+data/jobs.db
+data/applications/
+*.pdf
 *.log
-*.out

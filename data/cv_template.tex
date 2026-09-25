@@ -4,7 +4,7 @@
 
 \documentclass[10pt]{article}
 
-\usepackage[a4paper,hmargin=0.80in,top=0.55in,bottom=0.55in]{geometry}
+\usepackage[a4paper,hmargin=0.80in,top=0.45in,bottom=0.45in]{geometry}
 \usepackage{xcolor}
 
 \usepackage[utf8]{inputenc}
@@ -24,8 +24,8 @@
 
 %====== LIST FORMATTING ======
 \usepackage{enumitem}
-\setlist[itemize]{nosep, left=0pt .. 1.2em, topsep=1pt, parsep=1pt}
-\setlist[description]{nosep, left=0pt, topsep=2pt, itemsep=2pt}
+\setlist[itemize]{nosep, left=0pt .. 1.2em, topsep=1pt, parsep=0.5pt}
+\setlist[description]{nosep, left=0pt, topsep=1pt, itemsep=1.5pt}
 
 %====== TITLE FORMATTING ======
 \usepackage{xhfill}
@@ -35,8 +35,8 @@
 }
 
 \usepackage{titlesec}
-\titlespacing{\section}{0pt}{4pt}{2pt}
-\titlespacing{\subsection}{0pt}{2pt}{0pt}
+\titlespacing{\section}{0pt}{3pt}{1pt}
+\titlespacing{\subsection}{0pt}{1.5pt}{0pt}
 \titlespacing{\subsubsection}{0pt}{1pt}{0pt}
 \titleformat{\section}{\normalsize\bfseries\uppercase}{}{}{\midrule}
 \titleformat*{\subsection}{\small\bfseries}
@@ -57,7 +57,7 @@
     
     %====== BANNER ======
     \begin{center}
-        {\fontsize{24}{26}\bfseries\color{accent} LUKÁŠ WEISSGRÁB} \\[2pt]
+        {\fontsize{22}{24}\bfseries\color{accent} LUKÁŠ WEISSGRÁB} \\[2pt]
         \small
         \href{tel:775033549}{{\color{gray}{\faPhone}} 775 033 549} \quad
         \href{mailto:weissgrlu@gmail.com}{{\color{gray}{\faEnvelope}} weissgrlu@gmail.com} \quad 
@@ -73,24 +73,32 @@
     %====== DOVEDNOSTI ======
     \section{Dovednosti}
     \begin{description}[font=\bfseries]
-        \item[Technický stack:] SQL (Google BigQuery, PostgreSQL), Python (Pandas, NumPy, Scikit-learn), Tableau Public, Git, GitHub, Jupyter Notebooks, Excel
-        \item[Analytické metody:] Exploratorní datová analýza (EDA), regrese, segmentace zákazníků, časové řady, statistické modelování, data storytelling
+        \item[Technický stack:] SQL (Google BigQuery, PostgreSQL, SQLite), Python (Pandas, NumPy, Scikit-learn, Playwright), Tableau Public, Git, GitHub, Jupyter Notebooks, Excel, LaTeX (Tectonic)
+        \item[Analytické metody \& AI:] Exploratorní datová analýza (EDA), statistické modelování, segmentace zákazníků, LLM integrace (Gemini API), automatizace procesů (ETL, Task Scheduler, Web Scraping), data storytelling
         \item[Jazyky a domény:] Angličtina (B2), Letecké operace a meteorologie (PPL(A), student teorie ATPL)
     \end{description}
     
     %====== PROJEKTY ======
     \section{Projekty}
+    \subsection{JobHunt AI: Autonomní pipeline pro monitoring trhu práce \aux{\href{https://github.com/weissgrlu/job-hunt-ai}{Link \linkicon}}}
+    \begin{itemize}
+        \item \textbf{Stack:} Python (Playwright, BeautifulSoup), SQLite, Google Gemini API, Tectonic (LaTeX), Windows Task Scheduler
+        \item End-to-end systém pro scraping nabídek (Jobs.cz), deduplikaci v SQLite, LLM vyhodnocování relevance a dynamickou kompilaci PDF CV.
+        \item \textit{{{JOBHUNT_HIGHLIGHT}}}
+    \end{itemize}
+
     \subsection{The Hidden Cost of Weather: Audit indukovaných zpoždění letecké dopravy \aux{\href{https://github.com/weissgrlu/airline-delay-metar-analysis}{Link \linkicon}}}
     \begin{itemize}
         \item \textbf{Stack:} Python (Pandas, Regex parsing METAR), Time-Series Tail Number Tracking, Tableau Public, Jupyter Notebook
         \item Analýza US letových dat a METAR počasí: kvantifikace kaskádových zpoždění a provozních vlivů na rotace letadel.
-        \item \textit{{{PROJECT_HIGHLIGHT}}}
+        \item \textit{{{FLIGHT_HIGHLIGHT}}}
     \end{itemize}
     
     \subsection{Cyclistic Bike-Share: Behaviorální analýza a marketingová konverze \aux{\href{https://github.com/weissgrlu/google-data-analytics-cyclistics}{Link \linkicon}}}
     \begin{itemize}
         \item \textbf{Stack:} Google BigQuery (SQL), Feature Engineering, Exploratory Data Analysis (EDA), Tableau Public, GitHub
         \item Kohortová segmentace a analýza více než 5 milionů jízd pro optimalizaci konverzních strategií předplatného.
+        \item \textit{{{CYCLISTIC_HIGHLIGHT}}}
     \end{itemize}
     
     %====== PRAXE ======
@@ -117,11 +125,11 @@
         \item \textbf{Diplomová práce:} \textit{Kvantitativní a kvalitativní výzkum} -- hloubková analýza empirických dat, testování statistických hypotéz.
     \end{itemize}
     
-    \vspace{2pt}
+    \vspace{1pt}
     \noindent
     \textbf{Certifikace:} 
     Google Data Analytics Professional Certificate (2026) $|$ 
-    Google AI Essentials (2026) $|$ 
+    Google AI Professional Certificate (2026) $|$ 
     Lídr školy -- management a soft-skills (2025)
     
 \end{document}
