@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from src.scrapers.jobscz import scrape_jobs, enrich_missing_details
+from src.scrapers.startupjobs import scrape_startupjobs
 from src.evaluator import process_all_jobs
 from src.generator import process_applications
 from src.notifier import send_email_notification
@@ -45,15 +46,20 @@ def compile_pdfs():
 
 def main():
     print("========================================")
-    print("   JOB-HUNT-AI: SPOUŠTĚNÍ AUTOMATIZACE  ")
+    print("   JOB-HUNT-AI: SPOUŠTĚNÍ AUTOMATIZACE   ")
     print("========================================")
 
-    # 1. Scraping z Jobs.cz a doplnění detailů
-    print("\n--- [FÁZE 1/5] Scraping Jobs.cz a dotahování detailů ---")
-    # Nejdříve projde vyhledávání na Jobs.cz a stáhne nové nabídky
+    # 1. Scraping inzerátů (Jobs.cz + StartupJobs)
+    print("\n--- [FÁZE 1/5] Scraping inzerátů (Jobs.cz + StartupJobs) ---")
+    
+    # Jobs.cz
+    print("\n[Zdroj: Jobs.cz]")
     scrape_jobs()
-    # Následně ke všem novým dočte plný text inzerátu
     enrich_missing_details(limit=200)
+
+    # StartupJobs
+    print("\n[Zdroj: StartupJobs.cz]")
+    scrape_startupjobs()
 
     # 2. Deterministické AI vyhodnocení
     print("\n--- [FÁZE 2/5] Vyhodnocení inzerátů (Gatekeeper) ---")

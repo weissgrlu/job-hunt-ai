@@ -25,19 +25,19 @@ client = genai.Client(api_key=API_KEY)
 
 class TailoredContent(BaseModel):
     cv_summary: str = Field(
-        description="Profesní shrnutí (2-3 věty) do záhlaví CV, psané česky, zdůrazňující analytické schopnosti a přesah kandidáta relevantní pro tuto pozici."
+        description="Profesní shrnutí (2-3 věty) do záhlaví CV v češtině. Zdůrazni exaktní analytické základy z MFF UK, praktické ovládání SQL/Python/BI a věcnou orientaci na řešení reálných byznys problémů bez klišé. Přizpůsob tón a zdůrazněné technologie poptávané roli v inzerátu."
     )
     jobhunt_project_bullet: str = Field(
-        description="Jedna konkrétní věta v češtině doplňující projekt JobHunt AI. Vyzdvihni automatizaci datové pipeline, integraci LLM API, scraping nebo architekturu zpracování dat s vazbou na danou roli."
+        description="Konkrétní technický detail k projektu JobHunt AI (přesně 1 věta v češtině). NIKDY nepopisuj celý projekt ani nezačínej 'V projektu...'. Zdůrazni konkrétní technický aspekt odpovídající poptávce v inzerátu: např. normalizační logiku v SQLite, regex čištění textu, ošetření API rate-limitů s backoffem nebo orchestraci procesů přes Task Scheduler."
     )
     flight_project_bullet: str = Field(
-        description="Jedna konkrétní věta v češtině doplňující letecký projekt (The Hidden Cost of Weather). Vyzdvihni práci s Pythonem, parsování dat, časové řady nebo vizualizace v Tableau s vazbou na danou roli."
+        description="Konkrétní analytický detail k projektu leteckých zpoždění (přesně 1 věta v češtině). NIKDY nepopisuj celý projekt ani nezačínej 'V projektu...'. Zdůrazni konkrétní aspekt relevantní pro danou pozici: např. sestavení regex parseru pro nestrukturované METAR depeše, trasování rotací letadel podle tail number, čištění chybějících hodnot v Pandas nebo návrh vizualizací v Tableau."
     )
     cyclistic_project_bullet: str = Field(
-        description="Jedna konkrétní věta v češtině doplňující projekt Cyclistic Bike-Share. Vyzdvihni pokročilé SQL v BigQuery nad velkým objemem dat, EDA, kohorty nebo byznys segmentaci s vazbou na danou roli."
+        description="Konkrétní byznys či datový detail k projektu Cyclistic (přesně 1 věta v češtině). NIKDY nepopisuj celý projekt ani nezačínej 'V projektu...'. Zdůrazni konkrétní aspekt podle zaměření role: např. optimalizace agregačních dotazů a partitioningu nad 5,9M řádky v BigQuery, kohortové srovnání špiček v chování předplatitelů nebo návrh hypotéz pro konverzní kampaně."
     )
     cover_letter_body: str = Field(
-        description="Strukturovaný text motivačního dopisu (3 odstavce: úvod a motivace, konkrétní přínos a projekty/stack, závěr a výzva k setkání)."
+        description="Strukturovaný text motivačního dopisu (přesně 3 odstavce: 1. úvod a konkrétní motivace pro danou firmu/roli, 2. konkrétní přínos, technologie a relevance projektů, 3. závěr a výzva k osobnímu setkání). Tón je profesionální, věcný a sebevědomý, bez patosu a obecných klišé."
     )
 
 
@@ -74,21 +74,42 @@ def load_file(path: Path) -> str:
 
 def generate_tailored_texts(profile_str: str, job_title: str, job_desc: str) -> TailoredContent:
     prompt = f"""
-Jsi zkušený kariérní poradce. Vytvoř na míru šité podklady pro kandidáta hlásícího se na tuto pozici.
+Jsi seniorní datový architekt a hiring manager. Tvým úkolem je připravit vysoce personalizované, věcné a technicky exaktní podklady pro kandidáta, které přesvědčí firmu, že má přesně ty schopnosti a myšlení, které hledají.
 
 PROFIL KANDIDÁTA:
 {profile_str}
 
 POZICE: {job_title}
-POPIS POZICE:
+POPIS POZICE (INZERÁT):
 {job_desc}
 
-ÚKOL:
-1. `cv_summary`: Napiš úderné shrnutí profilu (2-3 věty v češtině). Vyzdvihni exaktní analytické myšlení (MFF UK), pokročilé SQL/Python/BI a schopnost interpretovat data pro byznys.
-2. `jobhunt_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na projekt JobHunt AI. Zdůrazni robustní end-to-end automatizaci procesů, orchestraci databáze (SQLite) a propojení AI s reálnou aplikací s ohledem na požadavky v inzerátu.
-3. `flight_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na letecký projekt (audit zpoždění letů, METAR počasí). Zdůrazni práci v Pythonu, čištění nestrukturovaných dat, časové řady nebo reporting relevantní pro tuto pozici.
-4. `cyclistic_project_bullet`: Napiš jednu konkrétní větu v češtině přímo navazující na projekt Cyclistic Bike-Share. Zdůrazni práci v Google BigQuery (SQL) nad 5,9M řádky a segmentaci pro byznys rozhodování relevantní pro tuto pozici.
-5. `cover_letter_body`: Napiš profesionální, věcný a sebevědomý motivační dopis (cca 3 odstavce v češtině). Žádné prázdné fráze. Zaměř se na okamžitou přidanou hodnotu.
+PRAVIDLA PRO GENEROVÁNÍ TEXTŮ:
+
+1. `cv_summary` (2-3 věty):
+   - Propoj exaktní základ z MFF UK (matematická analýza, statistika) s praktickou praxí v datech (SQL, Python, BI) a zkušenostmi z operativního řízení organizace.
+   - Vyzdvihni ty nástroje a vlastnosti, které inzerát nejvíce poptává (pokud hledají BI, zdůrazni vizualizaci a byznys rozhodování; pokud hledají ETL/Python, zdůrazni automatizaci, scriptování a datové struktury).
+   - Žádná prázdná klišé ("jsem nadšený", "hledám novou výzvu").
+
+2. PROJEKTOVÉ ODRÁŽKY (PŘÍSNÁ PRAVIDLA PROTI REDUNDANCI):
+   V životopise již existuje základní popis každého projektu! Tvá odrážka NESMÍ znovu popisovat, co projekt dělá, ani parafrázovat základní stack.
+   - ZÁKAZ frází: "Vytvořil systém pro...", "Analyzoval data o...", "Navrhl pipeline pro...".
+   - KAŽDÁ ODRÁŽKA MUSÍ BÝT PŘESNĚ 1 VĚTA, která začíná přímo akčním slovesem v minulém čase nebo konkrétní metodou (např. "Implementoval...", "Strukturoval...", "Zredukoval...", "Kombinací dotazů odhalil...").
+   - Úkolem této jedné věty je vybrat JEDEN konkrétní technický nebo byznys detail z projektu, který odpovídá požadavkům v tomto konkrétním inzerátu:
+
+   * `jobhunt_project_bullet` (JobHunt AI):
+     - Zvol detail podle role: pokud inzerát hledá backend/DB, zdůrazni normalizovanou deduplikaci a transakce v SQLite. Pokud hledá API/AI, zdůrazni strukturované schema výstupů přes Gemini API a ošetření chyb. Pokud orchestraci, zmiň periodické plánování úloh a headless scraping.
+   
+   * `flight_project_bullet` (The Hidden Cost of Weather):
+     - Zvol detail podle role: pokud inzerát hledá práci s textem/Pythonem, vypíchni regex parsování kódů meteorologických jevů z METAR. Pokud časové řady, vypíchni rekonstrukci rotací letadel podle registrace (tail number). Pokud reporting/BI, vypíchni metriky a dashboard v Tableau.
+   
+   * `cyclistic_project_bullet` (Cyclistic Bike-Share):
+     - Zvol detail podle role: pokud inzerát řeší databáze/SQL, vypíchni optimalizaci dotazů nad 5,9M řádky v BigQuery. Pokud řeší byznys/marketing, vypíchni identifikaci rozdílů v chování předplatitelů a návrh cílení.
+
+3. `cover_letter_body` (3 odstavce):
+   - Odstavec 1: Úvodní oslovení, reakce na roli a stručné shrnutí, proč profil (matematika MFF UK + praktická datová praxe) přesně pasuje na potřeby firmy.
+   - Odstavec 2: Konkrétní důkazy – propojení klíčových požadavků z inzerátu se zkušenostmi na projektech (zmínit konkrétní stack a relevantní výstupy).
+   - Odstavec 3: Závěrečné shrnutí ochoty rychle se zapojit a přinést týmu exaktní výsledky + přímá výzva k osobnímu setkání.
+   - Vynechej úvodní hlavičky typu "Vážený pane...", generuj pouze samotné tělo textu dopisu.
 """
 
     response = client.models.generate_content(
@@ -154,7 +175,7 @@ def process_applications(min_score: int = 70) -> list[dict]:
         job_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            # 1. Vyplnění a uložení CV do LaTeXu se všemi třemi projekty
+            # 1. Vyplnění a uložení CV do LaTeXu
             cv_filled = cv_template.replace("{{SUMMARY}}", escape_latex(tailored.cv_summary))
             cv_filled = cv_filled.replace("{{JOBHUNT_HIGHLIGHT}}", escape_latex(tailored.jobhunt_project_bullet))
             cv_filled = cv_filled.replace("{{FLIGHT_HIGHLIGHT}}", escape_latex(tailored.flight_project_bullet))
@@ -196,7 +217,7 @@ def process_applications(min_score: int = 70) -> list[dict]:
         except Exception as e:
             print(f" -> Chyba při zápisu souborů pro {title}: {e}")
 
-        # Bezpečná prodleva mezi voláními pro dodržení limitu 15 RPM
+        # Prodleva mezi voláními pro dodržení limitu 15 RPM
         time.sleep(4.5)
 
     conn.close()
